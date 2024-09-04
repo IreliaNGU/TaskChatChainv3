@@ -1,0 +1,11 @@
+dataset:
+  name: tb
+  src: data/tb_data/processed/tb_dialogue.jsonl
+  save_dir: data/tb_data/processed
+
+intent_framework:
+  name: tb_v2
+  src: config/framework/tb_v2.yaml
+
+output:
+  intent_classification: output/intent_classification

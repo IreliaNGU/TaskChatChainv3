@@ -1,0 +1,160 @@
+intents:
+  - id: act_ask
+    desc: 询问
+    child:
+      - id: act_ask_what
+        desc: 询问某事是什么
+        slot:
+          - id: slot_ask_what
+            type: Info
+            desc: 希望得到的信息 #今天股票涨幅/今天天气情况/下次奥运会举办地点/基金分红的概念
+      - id: act_ask_why
+        desc: 询问某事为何发生或为何需要做
+        slot:
+          - id: slot_ask_why
+            type: Event
+            desc: 希望知道原因的事情 #需要提供身份证号码的原因
+      - id: act_ask_how
+        desc: 询问某事怎么做
+        slot:
+          - id: slot_ask_how
+            type: Event
+            desc: 希望知道做法的事情 #注册一个新账号
+      - id: act_ask_when
+        desc: 询问某事发生或预期发生的时间
+        slot:
+          - id: slot_ask_when
+            type: Event
+            desc: 希望知道时间的事情 #下次奥运会举办时间
+      - id: act_ask_if
+        desc: 询问某个实体A是否符合某个描述B
+        slot:
+          - id: slot_ask_if_A
+            type: Entity
+            desc: 实体A
+          - id: slot_ask_if_B
+            type: Description
+            desc: 描述B
+  - id: act_reply
+    desc: 回复
+    child:
+      - id: act_reply_explain
+        desc: 对前述内容进行解释
+        slot:
+          - id: slot_reply_explain_target
+            type: Entity/Event
+            desc: 解释的对象（实体或事件）
+          - id: slot_reply_explain_content
+            type: Info
+            desc: 解释的内容
+      - id: act_reply_correct
+        desc: 纠正
+        slot:
+          - id: slot_reply_correct_pre
+            type: Info
+            desc: 纠正前的信息
+          - id: slot_reply_correct_cur
+            type: Info
+            desc: 纠正后的信息
+      - id: act_reply_supplement
+        desc: 补充完善
+        slot:
+          - id: slot_reply_supplement_pre
+            type: Info
+            desc: 完善前的信息
+          - id: slot_reply_supplement_cur
+            type: Info
+            desc: 完善后的信息
+      - id: act_reply_deny
+        desc: 否认
+        slot:
+          - id: slot_reply_deny
+            type: Info
+            desc: 否认的内容
+      - id: act_reply_dont_know
+        desc: 不知道
+        slot:
+          - id: slot_reply_dont_know
+            type: Info
+            desc: 不知道的内容
+      - id: act_reply_refuse
+        desc: 拒绝
+        slot:
+          - id: slot_reply_refuse
+            type: Info
+            desc: 拒绝的内容
+      - id: act_reply_confirm
+        desc: 确认
+        slot:
+          - id: slot_reply_confirm
+            type: Info
+            desc: 确认的内容
+      - id: act_reply_accept
+        desc: 接受
+        slot:
+          - id: slot_reply_accept
+            type: Info
+            desc: 接受的内容
+  - id: act_request
+    desc: 请求
+    child:
+      - id: act_request_confirm
+        desc: 请求对方确认某个观点或建议
+        slot:
+          - id: slot_request_confirm
+            type: Info
+            desc: 请求确认的内容
+      - id: act_request_explain
+        desc: 请求对方进一步解释或澄清某事
+        slot:
+          - id: slot_request_explain
+            type: Info
+            desc: 请求解释的内容
+      - id: act_request_repeat
+        desc: 请求对方重述刚才的话
+        slot:
+          - id: slot_request_repeat
+            type: Info
+            desc: 请求重复的内容
+      - id: act_request_action
+        desc: 请求对方安排、预订、激活某事
+        slot:
+          - id: slot_request_action
+            type: Event
+            desc: 请求行为帮助的事情
+  - id: act_narrate
+    desc: 阐述
+    child:
+      - id: act_narrate_fact
+        desc: 陈述事实
+        slot:
+          - id: slot_narrate_fact
+            type: Info
+            desc: 陈述的事实
+      - id: act_narrate_opinion
+        desc: 陈述观点
+        slot:
+          - id: slot_narrate_opinion
+            type: Info
+            desc: 陈述的观点
+  - id: act_suggest
+    desc: 建议
+    slot:
+      - id: slot_suggest
+        type: Info
+        desc: 提出的建议或意见
+  - id: act_other
+    desc: 其他对话行为
+    child:
+      - id: act_other_greet
+        desc: 问候
+      - id: act_other_apologize
+        desc: 道歉
+      - id: act_other_thank
+        desc: 感谢
+      - id: act_other_praise
+        desc: 赞扬
+      - id: act_other_complain
+        desc: 抱怨
+      - id: act_other_goodbye
+        desc: 告别

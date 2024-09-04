@@ -1,0 +1,1 @@
+from .vllm_model import chat

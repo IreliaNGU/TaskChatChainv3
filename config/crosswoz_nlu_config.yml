@@ -1,0 +1,131 @@
+#对话意图
+intent:
+  - 
+    name: Inform
+    description: 告知对方某些信息或明确、细化自身的需求
+    need_give_slot: true
+    need_give_value: true
+    sub_intent: ~
+  - 
+    name: Request
+    description: 请求对方告知某些信息
+    need_give_slot: true
+    need_give_value: false
+    sub_intent: ~
+  - 
+    name: Recommend
+    description: 给对方推荐某些已知的信息
+    need_give_slot: true
+    need_give_value: true
+    sub_intent: ~
+  - 
+    name: NoOffer
+    description: 告诉对方没有能满足其需求的内容
+    need_give_slot: false
+    need_give_value: false
+    sub_intent: ~
+  - 
+    name: Select
+    description: 向对方咨询某领域A周边的当前领域的信息，此时槽名为“源领域”，槽值为领域A的名称
+    need_give_slot: true
+    need_give_value: true
+    sub_intent: ~
+  - 
+    name: General
+    description: 当用户
+    need_slot: false
+    need_value: false
+    sub_intent: 
+      - 
+        name: greet
+        description: 向对方表示问候
+        need_slot: false
+        need_value: false
+        sub_intent: ~
+      -
+        name: bye
+        description: 先对方告别再见
+        need_slot: false
+        need_value: false
+        sub_intent: ~
+      - 
+        name: thank
+        description: 向对方表示感谢
+        need_slot: false
+        need_value: false
+        sub_intent: ~
+      - 
+        name: reqmore
+        description: 向对方请求更多信息
+        need_slot: false
+        need_value: false
+        sub_intent: ~
+      - 
+        name: welcome
+        description: 向对方表示不用客气
+        need_slot: false
+        need_value: false
+        sub_intent: ~
+
+#领域
+domain:
+  - 
+    name: hotel
+    description: 酒店
+    slots:
+      - 
+        name: 名称
+        type: string
+        range: ~
+        sub_slot: ~
+      -
+        name: 类型
+        type: string
+        range: ['经济型', '舒适型', '高档型']
+        sub_slot: ~
+      - 
+        name: 酒店设施
+        type: ~
+        range: ~
+        sub_slot: 
+          - 
+            name: 健身房
+            type: bool
+            range: ~
+            sub_slot: ~
+          - 
+            name: 24小时热水
+            type: bool
+            range: ~
+            sub_slot: ~
+      - 
+        name: 价格
+        type: string
+        range: ['100以下', '100-200', '200-300', '300以上']
+        sub_slot: ~
+  -
+    name: restaurant
+    description: 餐馆
+    need_slot: true
+    need_value: true
+    sub_domain: ~
+  -
+    name: attraction
+    description: 景点
+    need_slot: true
+    need_value: true
+    sub_domain: ~
+  - 
+    name: taxi
+    description: 出租车
+    need_slot: true
+    need_value: true
+    sub_domain: ~
+  - 
+    name: subway
+    description: 地铁
+    need_slot: true
+    need_value: true
+    sub_domain: ~
+
+

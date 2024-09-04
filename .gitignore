@@ -1,0 +1,8 @@
+.vscode/
+models/
+data/
+logs/
+logs_relation/
+output/intent_classification/
+third_platform/
+
