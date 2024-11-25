@@ -1,0 +1,98 @@
+coarse_grained_intents:
+  - id: INFO_REQUIRING
+    description: "这个意图的含义是用户希望获取一些信息"
+  - id: INFO_PROVIDING
+    description: >
+      这个意图的含义是用户正在提供一些信息，包括但不限于
+      1. 对前文的反馈
+      2. 回复/提出自己的需求
+      3. 回复/提供自己的个人信息
+  - id: ACTION_REQUESTING
+    description: "这个意图的含义是用户需要系统帮助执行一些操作"
+
+fine_grained_intents:
+  - id: SQL_QUERY
+    description: "这个意图的含义是用户希望获取的信息可能来自关系型数据库"
+    parent_id: INFO_REQUIRING
+    schema:
+      - name: sql
+        description: 获取用户所需信息的最有可能的SQL查询语句
+  - id: VECTOR_QUERY
+    description: "这个意图的含义是用户希望获取的信息可能来自向量数据库"
+    parent_id: INFO_REQUIRING
+  - id: PROACTIVELY_INFORM
+    description: "这个意图的含义是用户主动向系统提供信息，内容匹配场景的某个槽位"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: slot_value
+        description: 表示用户希望填充的槽名与槽值的键值对。
+      - name: fill_type
+        description: 以何种方式填充这个槽位。可能的取值为COVER(这个槽首次被填充或是用户希望覆盖这个槽原本的取值)、APPEND(用户希望在这个槽原本的取值上追加新的取值)
+  - id: REPLY_INFORM
+    description: "这个意图的含义是用户对系统在前文的提问进行回答，内容匹配场景的某个槽位"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+      - name: slot_value
+        description: 表示用户希望填充的槽名与槽值的键值对。
+  - id: REPLY_DONT_KNOW
+    description: "这个意图的含义是用户对系统在前文的提问表示不知道答案"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+  - id: REPLY_ACCEPT
+    description: "这个意图的含义是用户对系统在前文希望用户进行某种行为表示同意"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+  - id: REPLY_REFUSE
+    description: "这个意图的含义是用户对系统在前文希望用户进行某种行为表示拒绝"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+  - id: REPLY_ACK
+    description: "这个意图的含义是用户对系统的回复简单表示理解"
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+    parent_id: INFO_PROVIDING
+  - id: REPLY_AFFIRM
+    description: "这个意图的含义是当系统希望用户做出确认时，用户回复表示确认。"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+  - id: REPLY_DENY
+    description: "这个意图的含义是当系统希望用户做出确认时，用户回复表示否认。"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+  - id: REPLY_FINISH
+    description: "这个意图的含义是用户对系统希望用户完成的某个动作，表示已完成"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+  - id: REPLY_NOT_FINISH
+    description: "这个意图的含义是用户对系统希望用户完成的某个动作，表示未完成"
+    parent_id: INFO_PROVIDING
+    schema:
+      - name: reply_utterance_id
+        description: 用户是在对前文的哪一句话进行回答,这个值应该是那一句话的id
+  - id: TASK_START
+    description: "这个意图的含义是用户希望系统帮助执行某个任务"
+    parent_id: ACTION_REQUESTING
+    schema:
+      - name: task_name
+        description: 用户希望系统执行的任务名称
+  - id: TASK_CANCEL
+    description: "这个意图的含义是用户希望取消正在执行的任务"
+    parent_id: ACTION_REQUESTING
+    schema:
+      - name: task_name
+        description: 用户希望取消的任务名称,任务必须正处于激活(active)状态

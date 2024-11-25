@@ -1,0 +1,32 @@
+entities:
+  - 
+    name: 商品
+    property:
+      -
+        name: 开拍时间
+        type: datetime
+      -
+        name: 付款时间
+        type: datetime
+      -
+        name: 价格
+        type: float
+      -
+        name: 生效活动
+        type: text
+      - 
+        name: 捆绑购买优惠
+        type: text
+  -
+    name: 点读笔
+    parent: 商品
+    property:
+      -
+        name: 距离限制
+        type: float
+  -
+    name: 客户
+    property:
+      -
+        name: 收货地址
+        type: text

@@ -10,7 +10,7 @@ import sys
 from api.vllm_model import chat
 from template.intent_classification.IR_template import HISTORY_WITH_LABEL_TEMPLATE, SUMMARIZE_HISTORY_TEMPLATE,COMPLETION_TEMPLATE
 from api.templates import DEFAULT_SYSTEM_PROMPT
-from constants.dialog import sentence_segment,intent_segment
+from constants.dialog import sentence_segment,intent_segment,Role
 from config import config
 
 data_path = '/home/hzl/work/TaskChatChainv3/intent_recognition/tb_data/processed/tb_dialogue.jsonl'
@@ -95,11 +95,13 @@ def action_transform(action):
 
 class TBdataset:
 
-    def __init__(self,window_size,sample_mode,src,model_type='qwen',
+    def __init__(self,window_size,src,model_type='qwen',
+                 sample_mode=1,
                  save2jsonl=True,
+                 only_user=True,
                  summarize=False,
                  completion=False,
-                 annoymous_speaker=True,
+                 annoymous_speaker=False,
                  load_from_json=False) -> None:
 
         #window_size指定了每次选取的对话历史窗口，当为-1时选择全部，当window_size大于该段对话轮数则选择全部轮数
@@ -109,6 +111,7 @@ class TBdataset:
         self.completion = completion
         self.model_type = model_type
         self.annoymous_speaker = annoymous_speaker
+        self.only_user = only_user
 
         if load_from_json:
             with open(src,"r") as reader:
@@ -123,8 +126,13 @@ class TBdataset:
             length = len(dialog['content'])
             self.total_len_stat[length] = self.total_len_stat.get(length,0) + 1
 
+        #合并连续的同一说话者的句子
+        self.combine_continuous_sentence()
+
+        #根据窗口大小调整数据集
         self.dialogs = self.adjust_to_window(config['dataset']['save_dir'],
                                              save2jsonl=save2jsonl,
+                                             only_user=only_user,
                                              summarize=self.summerize,
                                              completion=self.completion)
         self.train_set = None
@@ -137,6 +145,7 @@ class TBdataset:
     def adjust_to_window(self,
                         save_dir,
                         save2jsonl=True,
+                        only_user=True,
                         summarize=True,
                         completion=True):
         if self.dialogs == None:
@@ -154,70 +163,38 @@ class TBdataset:
                 chat_history = ""
                 completion_utterance = ""
 
-                #对所有对话历史作采样 
-                if self.window_size==-1:
-                    if (summarize or completion) and sent_num>1:
-                        speaker = sentences[-1]['speakerID']
-                        if speaker==1: other_speaker = 2
-                        else: other_speaker = 1
-                        role_dict = {speaker:'小明',other_speaker:'小红'}
-                        history = ""
-                        for idx,sent in enumerate(sentences[:-1]):
-                            history += role_dict[sent['speakerID']]+":"+sent['sentence']
-                            if idx != len(sentences)-2:
-                                history += "\n"
+                if not only_user:
+                    #对所有对话历史作采样 
+                    if self.window_size==-1:
+                        # if (summarize or completion) and sent_num>1:
+                        #     speaker = sentences[-1]['speakerID']
+                        #     if speaker==1: other_speaker = 2
+                        #     else: other_speaker = 1
+                        #     role_dict = {speaker:'小明',other_speaker:'小红'}
+                        #     history = ""
+                        #     for idx,sent in enumerate(sentences[:-1]):
+                        #         history += role_dict[sent['speakerID']]+":"+sent['sentence']
+                        #         if idx != len(sentences)-2:
+                        #             history += "\n"
 
-                        #对除了最后一句话外的对话历史做摘要
-                        if summarize:
-                            chat_history = chat(SUMMARIZE_HISTORY_TEMPLATE.format(history=history),model_type=self.model_type)
-                        
-                        #根据历史对最后一句话作上下文补全
-                        if completion:
-                            completion_utterance = chat(COMPLETION_TEMPLATE.format(history=history,sentence=sentences[-1]['sentence']),model_type=self.model_type)
+                        #     #对除了最后一句话外的对话历史做摘要
+                        #     if summarize:
+                        #         chat_history = chat(SUMMARIZE_HISTORY_TEMPLATE.format(history=history),model_type=self.model_type)
+                            
+                        #     #根据历史对最后一句话作上下文补全
+                        #     if completion:
+                        #         completion_utterance = chat(COMPLETION_TEMPLATE.format(history=history,sentence=sentences[-1]['sentence']),model_type=self.model_type)
 
-
-                    adjusted_content.append({"sampleID":sampleID,
-                                            "dialogID":dialog['dialogID'],
-                                            "content":sentences,
-                                            "history_summarization":chat_history,
-                                            "completion":completion_utterance})
-                    sampleID += 1
-                    continue
-                
-                #对不足窗口大小的对话历史做采样（则对全部轮次做采样）
-                if self.window_size >= sent_num:
-
-                    if (summarize or completion) and sent_num>1:
-                        speaker = sentences[-1]['speakerID']
-                        if speaker==1: other_speaker = 2
-                        else: other_speaker = 1
-                        role_dict = {speaker:'小明',other_speaker:'小红'}
-                        history = ""
-                        for idx,sent in enumerate(sentences[:-1]):
-                            history += role_dict[sent['speakerID']]+":"+sent['sentence']
-                            if idx != len(sentences)-2:
-                                history += "\n"
-
-
-                        #对除了最后一句话外的对话历史做摘要
-                        if summarize:
-                            chat_history = chat(SUMMARIZE_HISTORY_TEMPLATE.format(history=history),model_type=self.model_type)
-                        
-                        #根据历史对最后一句话作上下文补全
-                        if completion:
-                            completion_utterance = chat(COMPLETION_TEMPLATE.format(history=history,sentence=sentences[-1]['sentence']),model_type=self.model_type)
-
-
-                    adjusted_content.append({"sampleID":sampleID,
-                                            "dialogID":dialog['dialogID'],
-                                            "content":sentences,
-                                            "history_summarization":chat_history,
-                                            "completion":completion_utterance})
-                    sampleID += 1
-
-                #对大于窗口大小的对话历史做采样
-                else:
-                    for i in range(0,sent_num-self.window_size+1):
+                        adjusted_content.append({"sampleID":sampleID,
+                                                "dialogID":dialog['dialogID'],
+                                                "content":sentences,
+                                                "history_summarization":chat_history,
+                                                "completion":completion_utterance})
+                        sampleID += 1
+                        continue
+                    
+                    #对不足窗口大小的对话历史做采样（则对全部轮次做采样）
+                    if self.window_size >= sent_num:
 
                         if (summarize or completion) and sent_num>1:
                             speaker = sentences[-1]['speakerID']
@@ -225,32 +202,84 @@ class TBdataset:
                             else: other_speaker = 1
                             role_dict = {speaker:'小明',other_speaker:'小红'}
                             history = ""
-                            for idx,sent in enumerate(sentences[i:i+self.window_size-1]):
+                            for idx,sent in enumerate(sentences[:-1]):
                                 history += role_dict[sent['speakerID']]+":"+sent['sentence']
-
-                                if idx != self.window_size-2:
+                                if idx != len(sentences)-2:
                                     history += "\n"
-                                
 
+
+                            #对除了最后一句话外的对话历史做摘要
                             if summarize:
                                 chat_history = chat(SUMMARIZE_HISTORY_TEMPLATE.format(history=history),model_type=self.model_type)
                             
+                            #根据历史对最后一句话作上下文补全
                             if completion:
-                                completion_utterance = chat(COMPLETION_TEMPLATE.format(history=history,sentence=sentences[i+self.window_size-1]['sentence']),model_type=self.model_type)
+                                completion_utterance = chat(COMPLETION_TEMPLATE.format(history=history,sentence=sentences[-1]['sentence']),model_type=self.model_type)
+
 
                         adjusted_content.append({"sampleID":sampleID,
-                                                 "dialogID":dialog['dialogID'],
-                                                 "content":sentences[i:i+self.window_size],
-                                                 "history_summarization":chat_history,
-                                                 "completion":completion_utterance})
+                                                "dialogID":dialog['dialogID'],
+                                                "content":sentences,
+                                                "history_summarization":chat_history,
+                                                "completion":completion_utterance})
                         sampleID += 1
+
+                    #对大于窗口大小的对话历史做采样
+                    else:
+                        for i in range(0,sent_num-self.window_size+1):
+
+                            if (summarize or completion) and sent_num>1:
+                                speaker = sentences[-1]['speakerID']
+                                if speaker==1: other_speaker = 2
+                                else: other_speaker = 1
+                                role_dict = {speaker:'小明',other_speaker:'小红'}
+                                history = ""
+                                for idx,sent in enumerate(sentences[i:i+self.window_size-1]):
+                                    history += role_dict[sent['speakerID']]+":"+sent['sentence']
+
+                                    if idx != self.window_size-2:
+                                        history += "\n"
+                                    
+
+                                if summarize:
+                                    chat_history = chat(SUMMARIZE_HISTORY_TEMPLATE.format(history=history),model_type=self.model_type)
+                                
+                                if completion:
+                                    completion_utterance = chat(COMPLETION_TEMPLATE.format(history=history,sentence=sentences[i+self.window_size-1]['sentence']),model_type=self.model_type)
+
+                            adjusted_content.append({"sampleID":sampleID,
+                                                    "dialogID":dialog['dialogID'],
+                                                    "content":sentences[i:i+self.window_size],
+                                                    "history_summarization":chat_history,
+                                                    "completion":completion_utterance})
+                            sampleID += 1
+                else:
+                    #只对用户的对话历史做采样
+                    for i,sent in enumerate(sentences):
+                        if sent['speakerID'] == Role.System:
+                            continue
+
+                        user_utterance = sentences[i]
+                        if self.window_size==-1:
+                            history = sentences[:i]
+                        else:
+                            history = sentences[i-self.window_size:i] if i>=self.window_size else sentences[:i]
+
+                        adjusted_content.append({"sampleID":sampleID,
+                                                "dialogID":dialog['dialogID'],
+                                                "target":user_utterance,
+                                                "history":history}) 
+                        sampleID += 1
+
         elif self.sample_mode==2:
             raise NotImplementedError("wrong")
         elif self.sample_mode==3:
             raise NotImplementedError("Wrong")
         
         if save2jsonl:
-            save_path = Path(save_dir) / Path("tb_dataset_mode"+str(self.sample_mode)+"_size"+str(self.window_size)+".jsonl")
+
+            save_path = Path(save_dir) / Path("tb_dataset_mode"+str(self.sample_mode)+"_size"+str(self.window_size)+"_only_user.jsonl") if only_user \
+                else Path("tb_dataset_mode"+str(self.sample_mode)+"_size"+str(self.window_size)+".jsonl")
             with jsonlines.open(save_path,"w") as writer:
                 for cont in adjusted_content:
                     writer.write(cont)
@@ -515,16 +544,30 @@ def TB_same_role_intent_analysis():
         print("buyer、seller欧式距离",cal_euclidean_distance(buyer_intent_dict1,seller_intent_dict2))
 
 
-
-
 if __name__ == "__main__":
-    dataset = TBdataset(window_size=-1,sample_mode=1,src=data_path,annoymous_speaker=False,summarize=False,completion=False)
-    dataset.split_train_test(ratio=0.8)
-    sft_set = dataset.construct_sft_trainset()
-    with open("/home/hzl/work/TaskChatChainv3/intent_recognition/tb_data/processed/tb_sft_trainset.json","w") as writer:
-        json.dump(sft_set,writer,ensure_ascii=False,indent=4)
-    with open("/home/hzl/work/TaskChatChainv3/intent_recognition/tb_data/processed/tb_sft_testset.json","w") as writer:
-        json.dump(dataset.test_set,writer,ensure_ascii=False,indent=4)
-    print(dataset.test_set)
-    # TB_role_intent_analysis()
-    # TB_same_role_intent_analysis()
+    # dataset = TBdataset(window_size=-1,sample_mode=1,src=data_path,annoymous_speaker=False,summarize=False,completion=False)
+    # dataset.split_train_test(ratio=0.8)
+    # sft_set = dataset.construct_sft_trainset()
+    # with open("/home/hzl/work/TaskChatChainv3/intent_recognition/tb_data/processed/tb_sft_trainset.json","w") as writer:
+    #     json.dump(sft_set,writer,ensure_ascii=False,indent=4)
+    # with open("/home/hzl/work/TaskChatChainv3/intent_recognition/tb_data/processed/tb_sft_testset.json","w") as writer:
+    #     json.dump(dataset.test_set,writer,ensure_ascii=False,indent=4)
+    # print(dataset.test_set)
+    # # TB_role_intent_analysis()
+    # # TB_same_role_intent_analysis()
+
+    # #加载数据集
+    # data_path = config['dataset']['src']
+    # dataset = TBdataset(window_size=-1,
+    #                     src=data_path,
+    #                     only_user=True)
+
+
+    import json
+    data_path = "/disk0/fin_group/hzl/TaskChatChainv3/data/tb_data/processed/tb_dataset_mode1_size-1_only_user_renumber.jsonl"
+    save_path = "/disk0/fin_group/hzl/TaskChatChainv3/data/tb_data/processed/tb_dataset_mode1_size-1_only_user_renumber_v2.jsonl"
+    with open(save_path, 'w',encoding='utf-8') as f:
+        for item in jsonlines.open(data_path):
+            #将列表倒序
+            item['history'] = item['history'][::-1]
+            f.write(json.dumps(item,ensure_ascii=False)+'\n')

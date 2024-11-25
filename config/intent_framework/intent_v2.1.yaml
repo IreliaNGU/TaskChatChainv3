@@ -1,0 +1,186 @@
+#第三版意图框架
+
+intents:
+  - id: ASK
+    desc: 询问
+    child:
+      - id: ASK_INFO
+        desc: 询问某事的信息,SL中ENTITY是必须的
+        necessary_slot:
+          - 
+            - ENTITY
+            - PROPERTY
+        example:
+          - utterance: 你是谁？
+            representation: "[IN:ASK_INFO [SL:ENTITY 你] ]" 
+          - utterance: 介绍一下基金分红的概念
+            representation: "[IN:ASK_INFO [SL:ENTITY 基金分红 ] ]" 
+          - utterance: S221移动电源是什么啊？
+            representation: "[IN:ASK_INFO [SL:ENTITY S221移动电源 ] ]" 
+          - utterance: 这个怎么收费呢
+            representation: "[IN:ASK_INFO [SL:ENTITY 这个] [SL:PROPERTY 收费方式 ] ]"
+          - utterance: 什么时候可以发货？
+            representation: "[IN:ASK_INFO [SL:ENTITY 某件商品] [SL:PROPERTY 发货时间] ]"
+          #MARK
+          - utterance: 请问我现在是已经拍到了吗？
+            representation: "[IN:ASK_INFO [SL:ENTITY 我][SL:PROPERTY 已拍商品] ]"
+      - id: ASK_REASON 
+        desc: 询问原因，可能涉及ENTITY或者ACTION
+        necessary_slot:
+        -
+          - CONFUSED
+        example:
+          - utterance: 为什么要注册账号？
+            representation: "[IN:ASK_REASON [SL:CONFUSED 为什么要注册账号] ]"
+          #MARK
+          - utterance: 为什么颜色不同价格就不同呢？
+            representation: "[IN:ASK_REASON [SL:ENTITY 某件商品 ][SL:CONFUSED 颜色不同价格就不同] ]"
+          - utterance: 为什么我的快件还是没有物流信息？
+            representation: "[IN:ASK_REASON [SL:ENTITY 我][SL:PROPERTY 快件][SL:CONFUSED 没有物流信息] ]"
+      - id: ASK_IF
+        desc: 询问某个行为是否需要做/某个状态是否发生
+        necessary_slot:
+          - 
+            - CHOICE
+        example:
+          - utterance: 我想请教AD80的移动电源，还要配个充电器吗，
+            representation: "[IN:ASK_IF [SL:ENTITY AD80的移动电源 ] [SL:CHOICE 配充电器 ] ]"
+      - id: ASK_COMPARE
+        desc: 询问多个产品之间的比较结果
+        necessary_slot:
+          - 
+            - CHOICE
+        example:
+          - utterance: 还没确认收货，我要换货，要把我收到的全寄回去，还是单个主机？
+            representation: "[IN:ASK_IF [SL:ENTITY 我][SL:PRPPERTY 已收商品][SL:CHOICE 全寄回去][SL:CHOICE 单个主机]] [IN:REQUEST [SL:ACTION 换货]]"
+  - id: REPLY
+    desc: 对上文内容的回复
+    necessary_slot:
+      -
+        - ENTITY
+        - PROPERTY
+      -
+        - ACTION
+    child:
+      - id: REPLY_INFORM
+        desc: 提供信息
+        necessary_slot:
+          -
+            - ENTITY
+            - PROPERTY
+            - VALUE
+          -
+            - ACTION
+            - NECESSARY_SLOT
+            - VALUE
+        example:
+          - utterance: （上文：您遇到了什么问题？）我的点读笔不能用了
+            representation: "[IN:REPLY_INFO [SL:ENTITY 点读笔][SL:PROPERTY 常见问题][SL:VALUE 不能用了]]"
+          - utterance: （上文：您的风险承受能力如何？）我偏向于保守型投资者
+            representation: "[IN:REPLY_INFO [SL:ENTITY 用户][SL:PROPERTY 风险承受能力][SL:VALUE 保守型投资者]]"
+          - utterance: （上文：您希望预定的航班出发地是哪里）北京
+            representation: "[IN:REPLY_INFO [SL:ACTION 订票][SL:NECESSARY_SLOT 出发地][SL:VALUE 北京]]"
+      - id: REPLY_DONT_KNOW
+        desc: 不知道
+        necessary_slot:
+          -
+            - ENTITY
+            - PROPERTY
+        example:
+          - utterance: (上文：您的地址 什么快递能到的亲)我山沟了，我还不知道什么快递呢。
+            representation: "[IN:REPLY_DONT_KNOW [SL:ENTITY 我][SL:PROPERTY 可达快递]]"
+      - id: REPLY_REFUSE
+        desc: 拒绝
+        example:
+          - utterance: （上文：可以拍个照看看吗？）现在不方便
+            representation: "[IN:REPLY_REFUSE [SL:ACTION 拍照]]"
+      - id: REPLY_CONFIRM
+        desc: 确认。表达对系统提出的要求的同意/对系统询问的信息是否正确的确认
+        example:
+        #MARK
+          - utterance: （上文：电子产品走的都是陆运 而且还需要补加邮费）加邮费没问题，就是能不能快一点
+            # #before
+            # representation: "[IN:REPLY_CONFIRM [SL:ACTION 加邮费]]  [IN:COMPLAINT ]"
+            #after
+            representation: "[IN:REPLY_CONFIRM [SL:ACTION 购买商品][SL:NECESSARY_SLOT 邮费附加][SL:VALUE true]]  [IN:COMPLAINT ]"
+          - utterance: （上文：是否需要购买保险）需要
+            representation: "[IN:REPLY_CONFIRM [SL:ENTITY 订票][SL:PROPERTY 是否购买保险][SL:VALUE true]]"
+      - id: REPLY_DENY
+        desc: 否认        
+  - id: REQUEST
+    desc: 请求系统做某事
+    necessary_slot:
+      -
+        - ACTION
+    example:
+      #MARK,这个其实应该直接是ASK_REASON意图，因为查询这个ACTION理论上不需要额外定义，这里作为一个层级意图的例子来演示
+      - utterance: 我的东西怎么总是在杭州，你帮我查下吧
+        representation: "[IN:REQUEST [SL:ACTION 查询][SL:NECESSARY_SLOT1 查询内容][SL:VALUE 客户商品总是在杭州] ] or [IN:ASK_REASON [SL:ENTITY 我][SL:PROPERTY 已购商品][SL:CONFUSED 还在杭州] ]"
+      - utterance: 帮我修改一下收货地址为翻斗花园
+        representation: "[IN:REQUEST  [SL:ACTION 修改收货地址][SL:NECESSARY_SLOT1 新收货地址][SL:VALUE 翻斗花园]]"
+      #（之后会发现缺少这个ACTION的NECESSARY_SLOT比如为“新收货地址”，则会追问）
+      - utterance: 帮我修改一下收货地址
+        representation: "[IN:REQUEST  [SL:ACTION 修改收货地址]]" 
+      - utterance: Set up a reminder to message Mike at 7pm tonight.
+        representation: "[IN:REQUEST [SL:ACTION create_reminder][SL:NECESSARY_SLOT1 TODO][SL:VALUE [SL:ACION send_message][SL:NECESSARY_SLOT1 recipient][SL:VALUE mike]
+                                                                                                                          [SL:NECESSARY_SLOT2 method_message][SL:VALUE mike] ]
+                                                                [SL:NECESSARY_SLOT2 date_time][SL:VALUE at 7 pm tonight] ]"                                                      
+  - id: MODIFY
+    desc: 修正
+    necessary_slot:
+      -
+        - ENTITY
+        - PROPERTY
+        - NEW_VALUE
+      -
+        - ACTION
+        - NECESSARY_SLOT
+        - VALUE
+    child:
+      - id: MODIFY_UPDATE
+        desc: 更新行为/信息
+        example:
+          - utterance: 说错了，我的年收入是20万元
+            representation: "[IN:MODIFY_UPDATE [SL:ENTITY 我][SL:PROPERTY 年收入][SL:NEW_VALUE 20万元]]"
+          - utterance: 触屏不是失灵，是有点偏移
+            representation: "[IN:MODIFY_UPDATE [SL:ENTITY 某件商品][SL:PROPERTY 常见问题][SL:NEW_VALUE 触屏偏移]]"
+          - utterance: 我想订的是从北京出发的，不是上海
+            representation: "[IN:MODIFY_UPDATE [SL:ACTION 订票][SL:NECESSARY_SLOT 出发地][SL:VALUE 北京]]"
+      - id: MODIFY_CANCEL
+        desc: 撤销行为/信息
+        example:
+          - utterance: 我不想要了，取消订单
+            representation: "[IN:MODIFY_CANCEL [SL:ACTION 下单]]"
+  - id: COMPLEMENT
+    desc: 补足
+    necessary_slot:
+      - 
+        - ENTITY
+        - PROPERTY
+        - ADD_VALUE
+    example:
+      - utterance: 除了为了准备养老之外，这些钱还打算用来旅游
+        representation:  "[IN:COMPLEMENT [SL:ENTITY 用户][SL:PROPERTY 投资目标][SL:ADD_VALUE 旅游]]"
+  
+  # - id: act_suggest
+  #   desc: 建议
+  #   slot:
+  #     - id: slot_suggest
+  #       desc: 提出的建议或意见
+  - id: GREET
+    desc: 问候
+  - id: THANK
+    desc: 感谢
+  - id: COMPLAINT
+    desc: 抱怨
+    necessary_slot:
+    -
+      - REASON
+  - id: BYE
+    desc: 告别
+  - id: SORRY
+    desc: 道歉
+  - id: OTHER
+    desc: 其他与任务无关的对话行为
+
+      

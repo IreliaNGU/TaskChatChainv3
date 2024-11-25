@@ -1,0 +1,37 @@
+# advisor_config: config/advisor.yml
+# slot_info: scene/property.json
+
+#service
+flask_port: 8010
+
+#domain
+domain_path: domain.yml
+
+#nlu
+nlu:
+  domain_filter:
+    provider: ollama
+    model: qwen2.5:latest
+    api_base: http://10.249.50.13:11434/v1
+
+#database
+database:
+  mysql:
+    host: http://10.249.55.219:3306
+    database: finance
+  milvus:
+    host: http://10.249.55.219:19530
+
+#environments
+env_vars:
+  - name: BASE_API_URL
+    value: http://localhost:8010
+  - name: MAX_REQUESTS
+    value: "3"
+  - name: MAX_CONFIRM
+    value: "3"
+
+#other
+log_dir: logs/system
+base_dir: /disk0/fin_group/hzl/TaskChatChainv3
+

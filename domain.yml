@@ -1,0 +1,78 @@
+
+#scene
+scene: 金融投资对话
+
+description: 该场景中，智能客服为客户提供金融投资相关的服务。
+  属于场景相关的话题包括：
+  - 咨询关于金融投资的基本概念、专业术语。
+  - 咨询关于金融市场的近期走势。
+  - 定制化金融投资方案。
+  - 咨询关于本公司的基本信息、金融产品、服务、政策等信息。
+
+slots:
+  - name: 风险承受能力
+    description: 表示客户的风险承受能力等级。
+    type: categorical
+    valid_values:
+      - 保守型
+      - 稳健型
+      - 平衡型
+      - 积极型
+      - 激进型
+  - name: 年收入
+    description: 表示客户的年收入，如果客户提供了月收入或者日收入，请自动转换为以年为单位。
+    type: numerical
+    reset_after_task: 
+      - 定制投资计划
+    check: value > 0 and value < 100000000
+  - name: 年支出
+    type: numerical
+    description: 表示客户的年支出，如果客户提供了月支出或者日支出，请自动转换为以年为单位。
+    reset_after_task:
+      - 定制投资计划
+    check: value > 0 and value < 100000000
+
+function_calling:
+  - name: generate_investment_plan
+    description: 该接口用于为客户定制金融投资方案。
+
+tasks:
+  - name: 定制投资计划
+    description: 该任务为客户定制金融投资方案。
+    steps:
+      - step_type: slot_asking
+        slot: 风险承受能力
+      - step_type: slot_asking
+        slot: 年收入
+      - step_type: slot_asking
+        slot: 年支出
+      - step_type: function_execution
+        function: generate_investment_plan
+
+database_schema:
+  -
+    table_name: fund_product
+    description: 该表存储了公司所持有基金产品的信息。
+    columns:
+      - name: 基金名称
+        type: string
+        description: 基金产品的名称。
+      - name: 基金类型
+        type: string
+        description: 基金产品的类型。
+      - name: 基金规模
+        type: string
+        description: 基金产品的规模。
+  -
+    table_name: stock_product
+    description: 该表存储了公司所持有股票产品的信息。
+    columns:
+      - name: 股票名称
+        type: string
+        description: 股票产品的名称。
+      - name: 股票类型
+        type: string
+        description: 股票产品的类型。
+      - name: 股票市值
+        type: string
+        description: 股票产品的市值。
